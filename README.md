@@ -7,7 +7,7 @@
 
 Implementação on-chain do mecanismo de reconvergência elástica não-linear para tokens de clearing interbancário multilateral, descrito em:
 
-> **"Arquitetura Monetária Elástica para o BRICS"** — Armando José Freire de Melo (Manuscrito v40, 2026)
+> **"Arquitetura Monetária Elástica para o BRICS"** — Armando Freire (Manuscrito v40, 2026)
 > Submetido ao **CBlockchain 2027** (SBC)
 
 ---
