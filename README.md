@@ -1,4 +1,4 @@
-# BCA — BRICS Clearing Architecture
+#  Clearing Chain
 
 ![Tests](https://img.shields.io/badge/tests-11%2F11%20passing-brightgreen)
 ![Solidity](https://img.shields.io/badge/Solidity-0.8.24-blue)
