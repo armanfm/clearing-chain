@@ -1,0 +1,188 @@
+
+<h2 class="sr-only">BCA Elastic Reconvergence Visualizer — interactive simulation of price converging to fundamental value</h2>
+
+<style>
+  .bca-wrap { padding: 1rem 0; font-family: var(--font-sans); }
+  .bca-header h1 { font-size: 20px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 4px; }
+  .bca-header p { font-size: 14px; color: var(--color-text-secondary); margin: 0 0 1.5rem; }
+  .bca-grid { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+  .bca-panel { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem; }
+  .bca-label { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .bca-val { font-weight: 500; color: var(--color-text-primary); }
+  .bca-ctrl { margin-bottom: 14px; }
+  .bca-stable { font-size: 12px; padding: 6px 10px; border-radius: var(--border-radius-md); margin-bottom: 14px; border: 0.5px solid; }
+  .bca-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .bca-metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 12px; }
+  .bca-metric-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 2px; }
+  .bca-metric-val { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+  .bca-metric-sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px; }
+  .bca-formula { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 12px; font-size: 13px; margin-bottom: 14px; color: var(--color-text-primary); }
+  .bca-chart-wrap { position: relative; width: 100%; height: 240px; }
+  .bca-chart-wrap2 { position: relative; width: 100%; height: 180px; margin-top: 12px; }
+  .bca-chart-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin-bottom: 6px; }
+</style>
+
+<div class="bca-wrap">
+  <div class="bca-header">
+    <h1>BCA elastic reconvergence — visualizador interativo</h1>
+    <p>Simule como P converge para F com diferentes parâmetros α e k</p>
+  </div>
+
+  <div class="bca-grid">
+    <div class="bca-panel">
+      <div class="bca-ctrl">
+        <div class="bca-label">α (alpha) <span class="bca-val" id="alphaVal">0.50</span></div>
+        <input type="range" min="0.01" max="1" step="0.01" value="0.50" id="alphaSlider" style="width:100%">
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">velocidade de reconvergência</div>
+      </div>
+      <div class="bca-ctrl">
+        <div class="bca-label">k (rigidez) <span class="bca-val" id="kVal">0.15</span></div>
+        <input type="range" min="0.01" max="1.5" step="0.01" value="0.15" id="kSlider" style="width:100%">
+        <div style="font-size:11px;color:var(--color-text-tertiary);margin-top:2px">sensibilidade ao desvio</div>
+      </div>
+      <div id="stabilityBadge" class="bca-stable"></div>
+      <div class="bca-ctrl">
+        <div class="bca-label">desvio inicial <span class="bca-val" id="devVal">+50%</span></div>
+        <input type="range" min="-90" max="300" step="5" value="50" id="devSlider" style="width:100%">
+      </div>
+      <div class="bca-ctrl">
+        <div class="bca-label">passos <span class="bca-val" id="stepsVal">60</span></div>
+        <input type="range" min="10" max="150" step="5" value="60" id="stepsSlider" style="width:100%">
+      </div>
+      <button onclick="resetDefaults()" style="width:100%;margin-top:4px">
+        <i class="ti ti-refresh" aria-hidden="true"></i> baseline do paper
+      </button>
+    </div>
+
+    <div class="bca-panel">
+      <div class="bca-metrics">
+        <div class="bca-metric">
+          <div class="bca-metric-label">meia-vida</div>
+          <div class="bca-metric-val" id="halfLife">—</div>
+          <div class="bca-metric-sub">passos até 50%</div>
+        </div>
+        <div class="bca-metric">
+          <div class="bca-metric-label">desvio final</div>
+          <div class="bca-metric-val" id="finalDev">—</div>
+          <div class="bca-metric-sub">ao final</div>
+        </div>
+        <div class="bca-metric">
+          <div class="bca-metric-label">convergência</div>
+          <div class="bca-metric-val" id="convRate">—</div>
+          <div class="bca-metric-sub">redução total</div>
+        </div>
+      </div>
+      <div class="bca-formula">
+        P<sub>t+1</sub> = P<sub>t</sub> · [1 − α · tanh(k · (P/F − 1))]
+        &nbsp;&nbsp;|&nbsp;&nbsp; condição: 0 &lt; α·k &lt; 2
+      </div>
+      <div class="bca-chart-title">preço P vs fundamental F</div>
+      <div class="bca-chart-wrap">
+        <canvas id="chart1" role="img" aria-label="Gráfico de P convergindo para F">Simulação da reconvergência elástica</canvas>
+      </div>
+      <div class="bca-chart-title" style="margin-top:12px">desvio P/F ao longo do tempo</div>
+      <div class="bca-chart-wrap2">
+        <canvas id="chart2" role="img" aria-label="Desvio percentual ao longo dos passos">Desvio percentual</canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const tanh = x => { const e2x = Math.exp(Math.min(2*x, 80)); return (e2x-1)/(e2x+1); };
+const reconverge = (P, F, a, k) => P * (1 - a * tanh(k * (P/F - 1)));
+
+let chart1, chart2;
+
+function simulate() {
+  const alpha = parseFloat(document.getElementById('alphaSlider').value);
+  const k     = parseFloat(document.getElementById('kSlider').value);
+  const dev   = parseFloat(document.getElementById('devSlider').value) / 100;
+  const steps = parseInt(document.getElementById('stepsSlider').value);
+  const F     = 1.0;
+
+  document.getElementById('alphaVal').textContent = alpha.toFixed(2);
+  document.getElementById('kVal').textContent     = k.toFixed(2);
+  document.getElementById('devVal').textContent   = (dev >= 0 ? '+' : '') + (dev*100).toFixed(0) + '%';
+  document.getElementById('stepsVal').textContent = steps;
+
+  const ak = alpha * k;
+  const badge = document.getElementById('stabilityBadge');
+  if (ak > 0 && ak < 2) {
+    badge.style.background = 'var(--color-background-success)';
+    badge.style.color = 'var(--color-text-success)';
+    badge.style.borderColor = 'var(--color-border-success)';
+    badge.textContent = 'estável — α·k = ' + ak.toFixed(3);
+  } else {
+    badge.style.background = 'var(--color-background-danger)';
+    badge.style.color = 'var(--color-text-danger)';
+    badge.style.borderColor = 'var(--color-border-danger)';
+    badge.textContent = 'instável — α·k = ' + ak.toFixed(3) + ' (deve ser < 2)';
+  }
+
+  const labels = [], pData = [], fData = [], devData = [];
+  let P = F * (1 + dev);
+  for (let i = 0; i <= steps; i++) {
+    labels.push(i);
+    pData.push(+P.toFixed(6));
+    fData.push(F);
+    devData.push(+((P/F - 1) * 100).toFixed(2));
+    if (i < steps) P = reconverge(P, F, alpha, k);
+  }
+
+  const initDev = Math.abs(devData[0]);
+  const finalDevVal = Math.abs(devData[devData.length-1]);
+  let halfLife = steps;
+  for (let i = 0; i < devData.length; i++) {
+    if (Math.abs(devData[i]) <= initDev / 2) { halfLife = i; break; }
+  }
+  const convRate = initDev > 0 ? ((initDev - finalDevVal) / initDev * 100) : 0;
+
+  document.getElementById('halfLife').textContent = halfLife + ' p';
+  document.getElementById('finalDev').textContent = finalDevVal.toFixed(1) + '%';
+  document.getElementById('convRate').textContent = convRate.toFixed(0) + '%';
+
+  const commonOpts = {
+    responsive: true, maintainAspectRatio: false, animation: false,
+    plugins: { legend: { display: false } },
+    elements: { point: { radius: 0 } }
+  };
+
+  if (chart1) chart1.destroy();
+  chart1 = new Chart(document.getElementById('chart1'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'P', data: pData, borderColor: '#378ADD', borderWidth: 2, tension: 0.3 },
+        { label: 'F', data: fData, borderColor: '#D85A30', borderWidth: 1.5, borderDash: [6,3] }
+      ]
+    },
+    options: { ...commonOpts, plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 11 } } } } }
+  });
+
+  if (chart2) chart2.destroy();
+  chart2 = new Chart(document.getElementById('chart2'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{ label: 'desvio %', data: devData, borderColor: '#8b5cf6', borderWidth: 2, fill: true, backgroundColor: 'rgba(139,92,246,0.08)', tension: 0.3 }]
+    },
+    options: { ...commonOpts, scales: { y: { ticks: { callback: v => v + '%' } } } }
+  });
+}
+
+function resetDefaults() {
+  document.getElementById('alphaSlider').value = 0.50;
+  document.getElementById('kSlider').value     = 0.15;
+  document.getElementById('devSlider').value   = 50;
+  document.getElementById('stepsSlider').value = 60;
+  simulate();
+}
+
+['alphaSlider','kSlider','devSlider','stepsSlider'].forEach(id =>
+  document.getElementById(id).addEventListener('input', simulate)
+);
+simulate();
+</script>
